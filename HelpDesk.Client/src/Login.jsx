@@ -24,22 +24,23 @@ function Login() {
 
         setLoading(true);
 
+        // Timeout after 30 seconds
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, 30000);
+
         try {
-            console.log("Sending login request...");
-
-            // Stop waiting after 30 seconds
-            const controller = new AbortController();
-
-            const timeout = setTimeout(() => {
-                controller.abort();
-            }, 30000);
+            console.log("Starting login...");
+            console.log("API:", `${ API_URL } /Auth/login`);
 
             const response = await fetch(
                 `${ API_URL } /Auth/login`,
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
                     },
                     body: JSON.stringify({
                         email: email.trim(),
@@ -51,61 +52,68 @@ function Login() {
 
             clearTimeout(timeout);
 
-            console.log("Login response status:", response.status);
+            console.log("Response status:", response.status);
+
+            const text = await response.text();
+
+            console.log("Response body:", text);
 
             let data = {};
 
             try {
-                data = await response.json();
+                data = text ? JSON.parse(text) : {};
             } catch {
                 data = {};
             }
-
-            console.log("Login response data:", data);
 
             if (!response.ok) {
                 setError(
                     data.message ||
                     data.title ||
-                    "Invalid email or password."
+                    `Login failed(${ response.status })`
                 );
                 return;
             }
 
-            // Save authentication data
-            if (data.token) {
-                localStorage.setItem("token", data.token);
+            console.log("Login successful:", data);
+
+            if (!data.token) {
+                setError("Login succeeded but no token was returned.");
+                return;
             }
+
+            // Save login data
+            localStorage.setItem("token", data.token);
 
             if (data.role) {
                 localStorage.setItem("role", data.role);
             }
 
-            // Save user ID
             if (data.user?.id) {
                 localStorage.setItem(
                     "userId",
-                    data.user.id
+                    data.user.id.toString()
                 );
             }
-
-            console.log("Login successful!");
 
             // Go to dashboard
             navigate("/dashboard");
 
-        } catch (error) {
-            console.error("Login error:", error);
+        } catch (err) {
+            clearTimeout(timeout);
 
-            if (error.name === "AbortError") {
+            console.error("Login error:", err);
+
+            if (err.name === "AbortError") {
                 setError(
-                    "The server is taking too long to respond. Please try again."
+                    "The server took too long to respond. Please try again."
                 );
             } else {
                 setError(
-                    "Unable to connect to the server. Please try again."
+                    `Unable to connect to the API.${ err.message } `
                 );
             }
+
         } finally {
             setLoading(false);
         }
@@ -114,18 +122,13 @@ function Login() {
     return (
         <div style={styles.page}>
 
-            {/* Background decoration */}
             <div style={styles.backgroundCircleOne}></div>
             <div style={styles.backgroundCircleTwo}></div>
 
-            {/* Login card */}
             <div style={styles.loginCard}>
 
-                {/* Logo */}
                 <div style={styles.logo}>
-                    <span style={styles.logoIcon}>
-                        IT
-                    </span>
+                    <span style={styles.logoIcon}>IT</span>
                 </div>
 
                 <h1 style={styles.title}>
@@ -136,7 +139,6 @@ function Login() {
                     Sign in to manage your support tickets
                 </p>
 
-                {/* Error */}
                 {error && (
                     <div style={styles.errorBox}>
                         <span>⚠️</span>
@@ -144,10 +146,8 @@ function Login() {
                     </div>
                 )}
 
-                {/* Form */}
                 <form onSubmit={handleLogin}>
 
-                    {/* Email */}
                     <div style={styles.field}>
                         <label style={styles.label}>
                             Email Address
@@ -172,7 +172,6 @@ function Login() {
                         </div>
                     </div>
 
-                    {/* Password */}
                     <div style={styles.field}>
                         <label style={styles.label}>
                             Password
@@ -197,7 +196,6 @@ function Login() {
                         </div>
                     </div>
 
-                    {/* Login button */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -226,7 +224,6 @@ function Login() {
 
                 </form>
 
-                {/* Footer */}
                 <div style={styles.footer}>
                     <div style={styles.footerLine}></div>
 
