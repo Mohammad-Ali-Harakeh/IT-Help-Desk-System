@@ -7,6 +7,10 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi;
 using System.Text;
 
+// =========================================================
+// RENDER FILE WATCHER FIX
+// =========================================================
+
 Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
     "1"
@@ -29,7 +33,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );
 
-
 // =========================================================
 // CORS
 // =========================================================
@@ -48,20 +51,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 // =========================================================
 // CONTROLLERS
 // =========================================================
 
 builder.Services.AddControllers();
 
-
 // =========================================================
 // HTTP CLIENT
 // =========================================================
 
 builder.Services.AddHttpClient();
-
 
 // =========================================================
 // JWT AUTHENTICATION
@@ -100,16 +100,14 @@ builder.Services.AddAuthentication(options =>
         };
 });
 
-
 // =========================================================
 // AUTHORIZATION
 // =========================================================
 
 builder.Services.AddAuthorization();
 
-
 // =========================================================
-// SWAGGER
+// SWAGGER + JWT
 // =========================================================
 
 builder.Services.AddEndpointsApiExplorer();
@@ -148,13 +146,11 @@ builder.Services.AddSwaggerGen(options =>
     );
 });
 
-
 // =========================================================
-// BUILD
+// BUILD APP
 // =========================================================
 
 var app = builder.Build();
-
 
 // =========================================================
 // SWAGGER
@@ -166,14 +162,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
 // =========================================================
 // CORS
-// IMPORTANT: BEFORE AUTHENTICATION
+// IMPORTANT: CORS BEFORE AUTHENTICATION
 // =========================================================
 
 app.UseCors("AllowReact");
-
 
 // =========================================================
 // STATIC FILES
@@ -181,13 +175,11 @@ app.UseCors("AllowReact");
 
 app.UseStaticFiles();
 
-
 // =========================================================
 // AUTHENTICATION
 // =========================================================
 
 app.UseAuthentication();
-
 
 // =========================================================
 // AUTHORIZATION
@@ -195,19 +187,18 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-
 // =========================================================
 // CONTROLLERS
 // =========================================================
 
 app.MapControllers();
 
-
 // =========================================================
 // RUN
 // =========================================================
 
 app.Run();
+
 
 
 
