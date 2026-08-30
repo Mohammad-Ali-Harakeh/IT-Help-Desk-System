@@ -35,5 +35,6 @@ namespace ITHelpDeskAPI.Models
         public ICollection<TicketComment> Comments { get; set; } = new List<TicketComment>();
 
         public ICollection<ActivityLog> ActivityLogs { get; set; } = new List<ActivityLog>();
+        public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
     }
 }

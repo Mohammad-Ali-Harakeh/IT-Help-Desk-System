@@ -103,17 +103,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
 app.UseHttpsRedirection();
 
 app.UseCors("AllowReact");
+
+// Serve uploaded files
+app.UseStaticFiles();
+
 // Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-
 // Controllers
 app.MapControllers();
 
-
-app.Run();
+app.Run(); 

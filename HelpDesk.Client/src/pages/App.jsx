@@ -3,7 +3,7 @@ import Login from "./Login";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import ProtectedRoute from "./ProtectedRoute";
-
+import Notifications from "./pages/Notifications";
 function App() {
     return (
         <BrowserRouter>
@@ -28,10 +28,13 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-
+                <Route
+                    path="/notifications"
+                    element={<Notifications />}
+                />
             </Routes>
         </BrowserRouter>
     );
 }
 
-export default App;
+export default App; 

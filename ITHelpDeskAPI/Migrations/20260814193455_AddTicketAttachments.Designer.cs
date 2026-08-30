@@ -4,6 +4,7 @@ using ITHelpDeskAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ITHelpDeskAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260814193455_AddTicketAttachments")]
+    partial class AddTicketAttachments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,34 +92,6 @@ namespace ITHelpDeskAPI.Migrations
                             Id = 4,
                             CategoryName = "Account"
                         });
-                });
-
-            modelBuilder.Entity("ITHelpDeskAPI.Models.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("ITHelpDeskAPI.Models.Priority", b =>
@@ -258,47 +233,6 @@ namespace ITHelpDeskAPI.Migrations
                     b.ToTable("Tickets");
                 });
 
-            modelBuilder.Entity("ITHelpDeskAPI.Models.TicketAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("TicketId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UploadedByUserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TicketId");
-
-                    b.HasIndex("UploadedByUserId");
-
-                    b.ToTable("TicketAttachments");
-                });
-
             modelBuilder.Entity("ITHelpDeskAPI.Models.TicketComment", b =>
                 {
                     b.Property<int>("Id")
@@ -378,17 +312,6 @@ namespace ITHelpDeskAPI.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ITHelpDeskAPI.Models.Notification", b =>
-                {
-                    b.HasOne("ITHelpDeskAPI.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("ITHelpDeskAPI.Models.Ticket", b =>
                 {
                     b.HasOne("ITHelpDeskAPI.Models.User", "AssignedAgent")
@@ -429,25 +352,6 @@ namespace ITHelpDeskAPI.Migrations
                     b.Navigation("Priority");
 
                     b.Navigation("Status");
-                });
-
-            modelBuilder.Entity("ITHelpDeskAPI.Models.TicketAttachment", b =>
-                {
-                    b.HasOne("ITHelpDeskAPI.Models.Ticket", "Ticket")
-                        .WithMany("Attachments")
-                        .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ITHelpDeskAPI.Models.User", "UploadedByUser")
-                        .WithMany()
-                        .HasForeignKey("UploadedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Ticket");
-
-                    b.Navigation("UploadedByUser");
                 });
 
             modelBuilder.Entity("ITHelpDeskAPI.Models.TicketComment", b =>
@@ -503,8 +407,6 @@ namespace ITHelpDeskAPI.Migrations
             modelBuilder.Entity("ITHelpDeskAPI.Models.Ticket", b =>
                 {
                     b.Navigation("ActivityLogs");
-
-                    b.Navigation("Attachments");
 
                     b.Navigation("Comments");
                 });
