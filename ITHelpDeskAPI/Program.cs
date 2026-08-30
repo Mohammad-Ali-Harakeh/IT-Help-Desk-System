@@ -7,7 +7,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi;
 
 using System.Text;
-
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
 var builder = WebApplication.CreateBuilder(args);
 AppContext.SetSwitch("Microsoft.Extensions.Configuration.FileSystemWatcher", false);
 
