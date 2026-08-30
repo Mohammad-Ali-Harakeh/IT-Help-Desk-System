@@ -1,6 +1,4 @@
-
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
@@ -40,49 +38,48 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-            string prompt = $"""
-            You are an IT Help Desk AI assistant.
+            string prompt =
+                "You are an IT Help Desk AI assistant.\n\n" +
 
-            Analyze the following support ticket.
+                "Analyze the following support ticket.\n\n" +
 
-            Ticket Title:
-            {request.Title}
+                "Ticket Title:\n" +
+                request.Title +
+                "\n\n" +
 
-            Ticket Description:
-            {request.Description}
+                "Ticket Description:\n" +
+                request.Description +
+                "\n\n" +
 
-            Determine:
+                "Determine:\n\n" +
 
-            1. Category:
-               - Hardware
-               - Software
-               - Network
-               - Account
-               - Other
+                "1. Category:\n" +
+                "- Hardware\n" +
+                "- Software\n" +
+                "- Network\n" +
+                "- Account\n" +
+                "- Other\n\n" +
 
-            2. Priority:
-               - Low
-               - Medium
-               - High
-               - Critical
+                "2. Priority:\n" +
+                "- Low\n" +
+                "- Medium\n" +
+                "- High\n" +
+                "- Critical\n\n" +
 
-            3. Write a short professional summary.
+                "3. Write a short professional summary.\n\n" +
 
-            4. Give practical troubleshooting suggestions.
+                "4. Give practical troubleshooting suggestions.\n\n" +
 
-            Return ONLY valid JSON using exactly this structure:
+                "Return ONLY valid JSON using exactly these properties:\n\n" +
 
-            {{
-                "category": "Hardware",
-                "priority": "High",
-                "summary": "Short summary",
-                "suggestion": "Troubleshooting suggestion"
-            }}
+                "category: Hardware\n" +
+                "priority: High\n" +
+                "summary: Short summary\n" +
+                "suggestion: Troubleshooting suggestion\n\n" +
 
-            Do not add markdown.
-            Do not add ```json.
-            Do not add explanations outside the JSON.
-            """;
+                "Do not add markdown.\n" +
+                "Do not add ```json.\n" +
+                "Do not add explanations outside the JSON.";
 
             try
             {
@@ -140,27 +137,28 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-            string prompt = $"""
-            You are an IT Help Desk AI assistant.
+            string prompt =
+                "You are an IT Help Desk AI assistant.\n\n" +
 
-            The user has an IT problem.
+                "The user has an IT problem.\n\n" +
 
-            User message:
-            {request.Message}
+                "User message:\n" +
+                request.Message +
+                "\n\n" +
 
-            Provide a helpful troubleshooting response.
+                "Provide a helpful troubleshooting response.\n\n" +
 
-            Rules:
-            - Be professional.
-            - Keep the answer clear and practical.
-            - Give numbered steps when appropriate.
-            - Do not invent information.
-            - If the issue may be security-related, recommend contacting IT support.
-            """;
+                "Rules:\n" +
+                "- Be professional.\n" +
+                "- Keep the answer clear and practical.\n" +
+                "- Give numbered steps when appropriate.\n" +
+                "- Do not invent information.\n" +
+                "- If the issue may be security-related, recommend contacting IT support.";
 
             try
             {
-                string aiResponse = await AskOllama(prompt);
+                string aiResponse =
+                    await AskOllama(prompt);
 
                 return Ok(new
                 {
@@ -199,23 +197,25 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-            string prompt = $"""
-            You are an IT Help Desk assistant.
+            string prompt =
+                "You are an IT Help Desk assistant.\n\n" +
 
-            Create a short professional summary of this ticket.
+                "Create a short professional summary of this ticket.\n\n" +
 
-            Title:
-            {request.Title}
+                "Title:\n" +
+                request.Title +
+                "\n\n" +
 
-            Description:
-            {request.Description}
+                "Description:\n" +
+                request.Description +
+                "\n\n" +
 
-            Return only the summary.
-            """;
+                "Return only the summary.";
 
             try
             {
-                string summary = await AskOllama(prompt);
+                string summary =
+                    await AskOllama(prompt);
 
                 return Ok(new
                 {
@@ -295,22 +295,19 @@ namespace ITHelpDeskAPI.Controllers
 
             if (response.StartsWith("```json"))
             {
-                response =
-                    response.Substring(7);
+                response = response.Substring(7);
             }
 
             if (response.StartsWith("```"))
             {
-                response =
-                    response.Substring(3);
+                response = response.Substring(3);
             }
 
             if (response.EndsWith("```"))
             {
-                response =
-                    response.Substring(
-                        0,
-                        response.Length - 3);
+                response = response.Substring(
+                    0,
+                    response.Length - 3);
             }
 
             return response.Trim();
