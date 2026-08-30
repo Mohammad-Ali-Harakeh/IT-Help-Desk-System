@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = "https://it-help-desk-api-7iqa.onrender.com/api";
+
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -20,26 +22,46 @@ function Login() {
             return;
         }
 
+        setLoading(true);
+
         try {
-            setLoading(true);
+            console.log("Sending login request...");
+
+            // Stop waiting after 30 seconds
+            const controller = new AbortController();
+
+            const timeout = setTimeout(() => {
+                controller.abort();
+            }, 30000);
 
             const response = await fetch(
-                "https://it-help-desk-api-7iqa.onrender.com/api/Auth/login",
+                `${ API_URL } /Auth/login`,
                 {
-                method: "POST",
+                    method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        email: email,
+                        email: email.trim(),
                         password: password
-                    })
+                    }),
+                    signal: controller.signal
                 }
             );
 
-            const data = await response.json();
+            clearTimeout(timeout);
 
-            console.log("Login response:", data);
+            console.log("Login response status:", response.status);
+
+            let data = {};
+
+            try {
+                data = await response.json();
+            } catch {
+                data = {};
+            }
+
+            console.log("Login response data:", data);
 
             if (!response.ok) {
                 setError(
@@ -50,32 +72,40 @@ function Login() {
                 return;
             }
 
-            // =========================
-            // SAVE LOGIN DATA
-            // =========================
+            // Save authentication data
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+            }
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("role", data.role);
+            if (data.role) {
+                localStorage.setItem("role", data.role);
+            }
 
-            if (data.user && data.user.id) {
+            // Save user ID
+            if (data.user?.id) {
                 localStorage.setItem(
                     "userId",
                     data.user.id
                 );
             }
 
-            // =========================
-            // GO TO DASHBOARD
-            // =========================
+            console.log("Login successful!");
 
+            // Go to dashboard
             navigate("/dashboard");
 
         } catch (error) {
             console.error("Login error:", error);
 
-            setError(
-                "Unable to connect to the server. Make sure the API is running."
-            );
+            if (error.name === "AbortError") {
+                setError(
+                    "The server is taking too long to respond. Please try again."
+                );
+            } else {
+                setError(
+                    "Unable to connect to the server. Please try again."
+                );
+            }
         } finally {
             setLoading(false);
         }
@@ -84,19 +114,18 @@ function Login() {
     return (
         <div style={styles.page}>
 
-            {/* BACKGROUND DECORATION */}
-
+            {/* Background decoration */}
             <div style={styles.backgroundCircleOne}></div>
             <div style={styles.backgroundCircleTwo}></div>
 
-            {/* LOGIN CARD */}
-
+            {/* Login card */}
             <div style={styles.loginCard}>
 
-                {/* LOGO */}
-
+                {/* Logo */}
                 <div style={styles.logo}>
-                    <span style={styles.logoIcon}>IT</span>
+                    <span style={styles.logoIcon}>
+                        IT
+                    </span>
                 </div>
 
                 <h1 style={styles.title}>
@@ -107,8 +136,7 @@ function Login() {
                     Sign in to manage your support tickets
                 </p>
 
-                {/* ERROR */}
-
+                {/* Error */}
                 {error && (
                     <div style={styles.errorBox}>
                         <span>⚠️</span>
@@ -116,12 +144,10 @@ function Login() {
                     </div>
                 )}
 
-                {/* FORM */}
-
+                {/* Form */}
                 <form onSubmit={handleLogin}>
 
-                    {/* EMAIL */}
-
+                    {/* Email */}
                     <div style={styles.field}>
                         <label style={styles.label}>
                             Email Address
@@ -146,8 +172,7 @@ function Login() {
                         </div>
                     </div>
 
-                    {/* PASSWORD */}
-
+                    {/* Password */}
                     <div style={styles.field}>
                         <label style={styles.label}>
                             Password
@@ -172,8 +197,7 @@ function Login() {
                         </div>
                     </div>
 
-                    {/* LOGIN BUTTON */}
-
+                    {/* Login button */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -202,8 +226,7 @@ function Login() {
 
                 </form>
 
-                {/* FOOTER */}
-
+                {/* Footer */}
                 <div style={styles.footer}>
                     <div style={styles.footerLine}></div>
 
@@ -220,10 +243,6 @@ function Login() {
         </div>
     );
 }
-
-// =========================
-// STYLES
-// =========================
 
 const styles = {
 
@@ -311,8 +330,7 @@ const styles = {
 
     subtitle: {
         textAlign: "center",
-        margin:
-            "10px 0 30px",
+        margin: "10px 0 30px",
         color: "#64748b",
         fontSize: "14px",
         lineHeight: "1.6"
@@ -325,8 +343,7 @@ const styles = {
         padding: "12px 14px",
         marginBottom: "20px",
         backgroundColor: "#fef2f2",
-        border:
-            "1px solid #fecaca",
+        border: "1px solid #fecaca",
         borderRadius: "9px",
         color: "#b91c1c",
         fontSize: "13px",
@@ -348,11 +365,9 @@ const styles = {
     inputWrapper: {
         display: "flex",
         alignItems: "center",
-        border:
-            "1px solid #cbd5e1",
+        border: "1px solid #cbd5e1",
         borderRadius: "10px",
-        backgroundColor: "#f8fafc",
-        transition: "all 0.2s"
+        backgroundColor: "#f8fafc"
     },
 
     inputIcon: {
