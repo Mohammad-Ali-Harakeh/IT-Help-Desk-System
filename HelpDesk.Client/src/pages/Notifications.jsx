@@ -5,7 +5,7 @@ function Notifications() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("http://localhost:5237/api/Notification/user/1")
+        fetch("https://it-help-desk-api-7iqa.onrender.com/api/Notification/user/1")
             .then((response) => response.json())
             .then((data) => {
                 console.log("NOTIFICATIONS:", data);

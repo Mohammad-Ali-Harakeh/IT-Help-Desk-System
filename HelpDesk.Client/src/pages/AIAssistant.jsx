@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 function AIAssistant() {
     const navigate = useNavigate();
 
-    const API = "http://localhost:5237/api";
+    const API = "https://it-help-desk-api-7iqa.onrender.com/api";
 
     const [message, setMessage] = useState("");
     const [response, setResponse] = useState("");

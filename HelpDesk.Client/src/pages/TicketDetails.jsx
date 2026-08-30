@@ -41,7 +41,7 @@ function TicketDetails() {
                 // =========================
 
                 const ticketResponse = await fetch(
-                    `http://localhost:5237/api/Ticket/${id}`
+                    `https://it-help-desk-api-7iqa.onrender.com/api/Ticket/${id}`
                 );
 
 if (!ticketResponse.ok) {
@@ -56,7 +56,7 @@ setTicket(ticketData);
 // =========================
 
 const commentsResponse = await fetch(
-    `http://localhost:5237/api/Comment/ticket/${id}`
+    `https://it-help-desk-api-7iqa.onrender.com/api/Comment/ticket/${id}`
 );
 
 if (commentsResponse.ok) {
@@ -71,7 +71,7 @@ if (commentsResponse.ok) {
 // =========================
 
 const historyResponse = await fetch(
-    `http://localhost:5237/api/Ticket/${id}/history`
+    `https://it-help-desk-api-7iqa.onrender.com/api/Ticket/${id}/history`
 );
 
 if (historyResponse.ok) {
@@ -86,7 +86,7 @@ if (historyResponse.ok) {
 // =========================
 
 const attachmentsResponse = await fetch(
-    `http://localhost:5237/api/TicketAttachment/ticket/${id}`
+    `https://it-help-desk-api-7iqa.onrender.com/api/TicketAttachment/ticket/${id}`
 );
 
 if (attachmentsResponse.ok) {
@@ -122,7 +122,7 @@ const analyzeWithAI = async () => {
         setAiAnalysis(null);
 
         const response = await fetch(
-            "http://localhost:5237/api/AI/analyze-ticket",
+            "https://it-help-desk-api-7iqa.onrender.com/api/AI/analyze-ticket",
             {
                 method: "POST",
                 headers: {
@@ -181,7 +181,7 @@ const handleUpload = async () => {
         formData.append("uploadedByUserId", userId);
 
         const response = await fetch(
-            `http://localhost:5237/api/TicketAttachment/upload/${id}`,
+            `https://it-help-desk-api-7iqa.onrender.com/api/TicketAttachment/upload/${id}`,
             {
                 method: "POST",
                 body: formData
@@ -204,7 +204,7 @@ const handleUpload = async () => {
 
         // Reload attachments
         const attachmentsResponse = await fetch(
-            `http://localhost:5237/api/TicketAttachment/ticket/${id}`
+            `https://it-help-desk-api-7iqa.onrender.com/api/TicketAttachment/ticket/${id}`
         );
 
         if (attachmentsResponse.ok) {
@@ -599,7 +599,7 @@ return (
                         </div>
 
                         <a
-                            href={`http://localhost:5237${attachment.filePath}`}
+                            href={`https://it-help-desk-api-7iqa.onrender.com${attachment.filePath}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={styles.openButton}

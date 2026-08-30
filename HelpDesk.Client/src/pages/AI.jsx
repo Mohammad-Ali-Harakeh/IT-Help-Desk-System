@@ -12,7 +12,7 @@ function AI() {
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
     const [loadingAssistant, setLoadingAssistant] = useState(false);
 
-    const API_URL = "http://localhost:5237/api";
+    const API_URL = "https://it-help-desk-api-7iqa.onrender.com/api";
 
     // =========================
     // ANALYZE TICKET

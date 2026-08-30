@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 function Tickets() {
     const navigate = useNavigate();
 
-    const API = "http://localhost:5237/api";
+    const API = "https://it-help-desk-api-7iqa.onrender.com/api";
 
     const userId =
         Number(localStorage.getItem("userId")) || 1;

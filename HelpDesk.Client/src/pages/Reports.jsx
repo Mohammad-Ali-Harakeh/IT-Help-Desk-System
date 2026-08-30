@@ -16,7 +16,7 @@ function Reports() {
                 setError("");
 
                 const response = await fetch(
-                    "http://localhost:5237/api/Report/statistics"
+                    "https://it-help-desk-api-7iqa.onrender.com/api/Report/statistics"
                 );
 
                 console.log("Report status:", response.status);
@@ -49,14 +49,14 @@ function Reports() {
 
     const exportExcel = () => {
         window.open(
-            "http://localhost:5237/api/Report/excel",
+            "https://it-help-desk-api-7iqa.onrender.com/api/Report/excel",
             "_blank"
         );
     };
 
     const exportPdf = () => {
         window.open(
-            "http://localhost:5237/api/Report/pdf",
+            "https://it-help-desk-api-7iqa.onrender.com/api/Report/pdf",
             "_blank"
         );
     };
