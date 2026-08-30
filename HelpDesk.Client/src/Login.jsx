@@ -32,10 +32,10 @@ function Login() {
 
         try {
             console.log("Starting login...");
-            console.log("API:", `${ API_URL } /Auth/login`);
+            console.log("API:", `${ API_URL }/Auth/login`);
 
             const response = await fetch(
-                `${ API_URL } /Auth/login`,
+                `${ API_URL }/Auth/login`,
                 {
                     method: "POST",
                     headers: {
