@@ -32,9 +32,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://it-help-desk-frontend-vjcz.onrender.com"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
@@ -153,7 +157,7 @@ builder.Services.AddSwaggerGen(options =>
 // =========================================================
 
 var app = builder.Build();
-
+app.UseCors("AllowReact");
 
 // =========================================================
 // SWAGGER
