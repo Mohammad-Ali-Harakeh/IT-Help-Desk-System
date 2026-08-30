@@ -1,28 +1,37 @@
-
+```csharp
 using ITHelpDeskAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi;
-
 using System.Text;
+
+// =========================================================
+// FILE WATCHER FIX FOR RENDER
+// =========================================================
+
 Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
     "1"
 );
+
 var builder = WebApplication.CreateBuilder(args);
-AppContext.SetSwitch("Microsoft.Extensions.Configuration.FileSystemWatcher", false);
+
+AppContext.SetSwitch(
+    "Microsoft.Extensions.Configuration.FileSystemWatcher",
+    false
+);
 
 // =========================================================
 // DATABASE
 // =========================================================
 
 builder.Services.AddDbContext<AppDbContext>(options =>
- options.UseNpgsql(
-    builder.Configuration.GetConnectionString("DefaultConnection")
-));
-
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+);
 
 // =========================================================
 // CORS
@@ -42,21 +51,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 // =========================================================
 // CONTROLLERS
 // =========================================================
 
 builder.Services.AddControllers();
 
-
 // =========================================================
 // HTTP CLIENT
-// Required for Ollama AI
 // =========================================================
 
 builder.Services.AddHttpClient();
-
 
 // =========================================================
 // JWT AUTHENTICATION
@@ -95,13 +100,11 @@ builder.Services.AddAuthentication(options =>
         };
 });
 
-
 // =========================================================
 // AUTHORIZATION
 // =========================================================
 
 builder.Services.AddAuthorization();
-
 
 // =========================================================
 // SWAGGER + JWT
@@ -116,19 +119,12 @@ builder.Services.AddSwaggerGen(options =>
         new OpenApiSecurityScheme
         {
             Name = "Authorization",
-
             Type = SecuritySchemeType.Http,
-
             Scheme = "Bearer",
-
             BearerFormat = "JWT",
-
             In = ParameterLocation.Header,
-
-            Description =
-                "Enter: Bearer {your JWT token}"
+            Description = "Enter: Bearer {your JWT token}"
         });
-
 
     options.AddSecurityRequirement(
         new OpenApiSecurityRequirement
@@ -139,9 +135,7 @@ builder.Services.AddSwaggerGen(options =>
                     Reference =
                         new OpenApiReference
                         {
-                            Type =
-                                ReferenceType.SecurityScheme,
-
+                            Type = ReferenceType.SecurityScheme,
                             Id = "Bearer"
                         }
                 },
@@ -151,13 +145,11 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
-
 // =========================================================
 // BUILD APP
 // =========================================================
 
 var app = builder.Build();
-app.UseCors("AllowReact");
 
 // =========================================================
 // SWAGGER
@@ -169,7 +161,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
 // =========================================================
 // MIDDLEWARE
 // =========================================================
@@ -178,13 +169,11 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowReact");
 
-// Serve uploaded files
 app.UseStaticFiles();
 
 app.UseAuthentication();
 
 app.UseAuthorization();
-
 
 // =========================================================
 // CONTROLLERS
@@ -192,9 +181,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-
 // =========================================================
 // RUN
 // =========================================================
 
 app.Run();
+```
