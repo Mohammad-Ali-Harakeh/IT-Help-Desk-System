@@ -1,3 +1,4 @@
+
 using ITHelpDeskAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -10,11 +11,19 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 
-// Database
+// =========================================================
+// DATABASE
+// =========================================================
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
+
+
+// =========================================================
+// CORS
+// =========================================================
 
 builder.Services.AddCors(options =>
 {
@@ -25,83 +34,138 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
-// Controllers
+
+
+// =========================================================
+// CONTROLLERS
+// =========================================================
+
 builder.Services.AddControllers();
 
 
-// JWT Authentication
+// =========================================================
+// HTTP CLIENT
+// Required for Ollama AI
+// =========================================================
+
+builder.Services.AddHttpClient();
+
+
+// =========================================================
+// JWT AUTHENTICATION
+// =========================================================
+
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme =
+        JwtBearerDefaults.AuthenticationScheme;
+
+    options.DefaultChallengeScheme =
+        JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+    options.TokenValidationParameters =
+        new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
 
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer =
+                builder.Configuration["Jwt:Issuer"],
 
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(
-                builder.Configuration["Jwt:Key"]!
-            )
-        )
-    };
+            ValidAudience =
+                builder.Configuration["Jwt:Audience"],
+
+            IssuerSigningKey =
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(
+                        builder.Configuration["Jwt:Key"]!
+                    )
+                )
+        };
 });
 
 
-// Authorization
+// =========================================================
+// AUTHORIZATION
+// =========================================================
+
 builder.Services.AddAuthorization();
 
 
-// Swagger + JWT Button
+// =========================================================
+// SWAGGER + JWT
+// =========================================================
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter: Bearer {your JWT token}"
-    });
-
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
         {
-            new OpenApiSecurityScheme
+            Name = "Authorization",
+
+            Type = SecuritySchemeType.Http,
+
+            Scheme = "Bearer",
+
+            BearerFormat = "JWT",
+
+            In = ParameterLocation.Header,
+
+            Description =
+                "Enter: Bearer {your JWT token}"
+        });
+
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
+                    Reference =
+                        new OpenApiReference
+                        {
+                            Type =
+                                ReferenceType.SecurityScheme,
+
+                            Id = "Bearer"
+                        }
+                },
+
+                Array.Empty<string>()
+            }
+        });
 });
 
+
+// =========================================================
+// BUILD APP
+// =========================================================
 
 var app = builder.Build();
 
 
-// Swagger
+// =========================================================
+// SWAGGER
+// =========================================================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
+// =========================================================
+// MIDDLEWARE
+// =========================================================
 
 app.UseHttpsRedirection();
 
@@ -110,11 +174,20 @@ app.UseCors("AllowReact");
 // Serve uploaded files
 app.UseStaticFiles();
 
-// Authentication & Authorization
 app.UseAuthentication();
+
 app.UseAuthorization();
 
-// Controllers
+
+// =========================================================
+// CONTROLLERS
+// =========================================================
+
 app.MapControllers();
 
-app.Run(); 
+
+// =========================================================
+// RUN
+// =========================================================
+
+app.Run();

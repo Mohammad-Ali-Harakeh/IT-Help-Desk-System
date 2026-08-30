@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -16,7 +17,19 @@ function TicketDetails() {
     const [error, setError] = useState("");
     const [uploadMessage, setUploadMessage] = useState("");
 
+    // =========================
+    // AI
+    // =========================
+
+    const [aiAnalysis, setAiAnalysis] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState("");
+
     const userId = localStorage.getItem("userId");
+
+    // =========================
+    // LOAD DATA
+    // =========================
 
     useEffect(() => {
         const loadData = async () => {
@@ -31,475 +44,622 @@ function TicketDetails() {
                     `http://localhost:5237/api/Ticket/${id}`
                 );
 
-                if (!ticketResponse.ok) {
-                    throw new Error("Failed to load ticket");
-                }
+if (!ticketResponse.ok) {
+    throw new Error("Failed to load ticket");
+}
 
-                const ticketData = await ticketResponse.json();
-                setTicket(ticketData);
+const ticketData = await ticketResponse.json();
+setTicket(ticketData);
 
-                // =========================
-                // LOAD COMMENTS
-                // =========================
+// =========================
+// LOAD COMMENTS
+// =========================
 
-                const commentsResponse = await fetch(
-                    `http://localhost:5237/api/Comment/ticket/${id}`
-                );
+const commentsResponse = await fetch(
+    `http://localhost:5237/api/Comment/ticket/${id}`
+);
 
-                if (commentsResponse.ok) {
-                    const commentsData =
-                        await commentsResponse.json();
+if (commentsResponse.ok) {
+    const commentsData =
+        await commentsResponse.json();
 
-                    setComments(commentsData);
-                }
+    setComments(commentsData);
+}
 
-                // =========================
-                // LOAD HISTORY
-                // =========================
+// =========================
+// LOAD HISTORY
+// =========================
 
-                const historyResponse = await fetch(
-                    `http://localhost:5237/api/Ticket/${id}/history`
-                );
+const historyResponse = await fetch(
+    `http://localhost:5237/api/Ticket/${id}/history`
+);
 
-                if (historyResponse.ok) {
-                    const historyData =
-                        await historyResponse.json();
+if (historyResponse.ok) {
+    const historyData =
+        await historyResponse.json();
 
-                    setHistory(historyData.history || []);
-                }
+    setHistory(historyData.history || []);
+}
 
-                // =========================
-                // LOAD ATTACHMENTS
-                // =========================
+// =========================
+// LOAD ATTACHMENTS
+// =========================
 
-                const attachmentsResponse = await fetch(
-                    `http://localhost:5237/api/TicketAttachment/ticket/${id}`
-                );
+const attachmentsResponse = await fetch(
+    `http://localhost:5237/api/TicketAttachment/ticket/${id}`
+);
 
-                if (attachmentsResponse.ok) {
-                    const attachmentsData =
-                        await attachmentsResponse.json();
+if (attachmentsResponse.ok) {
+    const attachmentsData =
+        await attachmentsResponse.json();
 
-                    setAttachments(attachmentsData);
-                } else {
-                    setAttachments([]);
-                }
+    setAttachments(attachmentsData);
+} else {
+    setAttachments([]);
+}
 
             } catch (err) {
-                console.error("Error:", err);
-                setError(err.message);
-            }
+    console.error("Error:", err);
+    setError(err.message);
+}
         };
 
-        loadData();
+loadData();
     }, [id]);
 
-    // =========================
-    // UPLOAD FILE
-    // =========================
+// =========================
+// AI ANALYSIS
+// =========================
 
-    const handleUpload = async () => {
-        if (!selectedFile) {
-            setUploadMessage("Please select a file first.");
-            return;
-        }
-
-        if (!userId) {
-            setUploadMessage("User ID not found.");
-            return;
-        }
-
-        try {
-            setUploading(true);
-            setUploadMessage("");
-
-            const formData = new FormData();
-
-            formData.append("file", selectedFile);
-            formData.append("uploadedByUserId", userId);
-
-            const response = await fetch(
-                `http://localhost:5237/api/TicketAttachment/upload/${id}`,
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.message || "Upload failed"
-                );
-            }
-
-            setUploadMessage(
-                "File uploaded successfully!"
-            );
-
-            setSelectedFile(null);
-
-            // Reload attachments
-            const attachmentsResponse = await fetch(
-                `http://localhost:5237/api/TicketAttachment/ticket/${id}`
-            );
-
-            if (attachmentsResponse.ok) {
-                const attachmentsData =
-                    await attachmentsResponse.json();
-
-                setAttachments(attachmentsData);
-            }
-
-        } catch (err) {
-            console.error("Upload error:", err);
-
-            setUploadMessage(
-                err.message || "Upload failed"
-            );
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    // =========================
-    // LOADING
-    // =========================
-
-    if (!ticket && !error) {
-        return (
-            <div style={styles.page}>
-                <div style={styles.loadingCard}>
-                    <h2>Loading ticket...</h2>
-                </div>
-            </div>
-        );
+const analyzeWithAI = async () => {
+    if (!ticket) {
+        return;
     }
 
-    // =========================
-    // ERROR
-    // =========================
+    try {
+        setAiLoading(true);
+        setAiError("");
+        setAiAnalysis(null);
 
-    if (error) {
-        return (
-            <div style={styles.page}>
-                <div style={styles.errorCard}>
-                    <div style={styles.errorIcon}>⚠️</div>
-
-                    <h2>Something went wrong</h2>
-
-                    <p>{error}</p>
-
-                    <button
-                        onClick={() => navigate("/tickets")}
-                        style={styles.primaryButton}
-                    >
-                        ← Back to Tickets
-                    </button>
-                </div>
-            </div>
+        const response = await fetch(
+            "http://localhost:5237/api/AI/analyze-ticket",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    title: ticket.title || "",
+                    description: ticket.description || ""
+                })
+            }
         );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || "AI analysis failed."
+            );
+        }
+
+        setAiAnalysis(data);
+
+    } catch (err) {
+        console.error("AI analysis error:", err);
+
+        setAiError(
+            err.message || "Failed to analyze ticket."
+        );
+    } finally {
+        setAiLoading(false);
+    }
+};
+
+// =========================
+// UPLOAD FILE
+// =========================
+
+const handleUpload = async () => {
+    if (!selectedFile) {
+        setUploadMessage("Please select a file first.");
+        return;
     }
 
-    // =========================
-    // PAGE
-    // =========================
+    if (!userId) {
+        setUploadMessage("User ID not found.");
+        return;
+    }
 
+    try {
+        setUploading(true);
+        setUploadMessage("");
+
+        const formData = new FormData();
+
+        formData.append("file", selectedFile);
+        formData.append("uploadedByUserId", userId);
+
+        const response = await fetch(
+            `http://localhost:5237/api/TicketAttachment/upload/${id}`,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || "Upload failed"
+            );
+        }
+
+        setUploadMessage(
+            "File uploaded successfully!"
+        );
+
+        setSelectedFile(null);
+
+        // Reload attachments
+        const attachmentsResponse = await fetch(
+            `http://localhost:5237/api/TicketAttachment/ticket/${id}`
+        );
+
+        if (attachmentsResponse.ok) {
+            const attachmentsData =
+                await attachmentsResponse.json();
+
+            setAttachments(attachmentsData);
+        }
+
+    } catch (err) {
+        console.error("Upload error:", err);
+
+        setUploadMessage(
+            err.message || "Upload failed"
+        );
+    } finally {
+        setUploading(false);
+    }
+};
+
+// =========================
+// LOADING
+// =========================
+
+if (!ticket && !error) {
     return (
         <div style={styles.page}>
+            <div style={styles.loadingCard}>
+                <h2>Loading ticket...</h2>
+            </div>
+        </div>
+    );
+}
 
-            {/* HEADER */}
+// =========================
+// ERROR
+// =========================
 
-            <div style={styles.header}>
-                <div>
-                    <p style={styles.smallTitle}>
-                        TICKET DETAILS
-                    </p>
+if (error) {
+    return (
+        <div style={styles.page}>
+            <div style={styles.errorCard}>
+                <div style={styles.errorIcon}>⚠️</div>
 
-                    <h1 style={styles.pageTitle}>
-                        Ticket #{ticket.id}
-                    </h1>
-                </div>
+                <h2>Something went wrong</h2>
+
+                <p>{error}</p>
 
                 <button
                     onClick={() => navigate("/tickets")}
-                    style={styles.backButton}
+                    style={styles.primaryButton}
                 >
                     ← Back to Tickets
                 </button>
             </div>
+        </div>
+    );
+}
 
-            {/* TICKET INFORMATION */}
+// =========================
+// PAGE
+// =========================
 
-            <div style={styles.card}>
-                <div style={styles.cardHeader}>
-                    <div>
-                        <p style={styles.sectionLabel}>
-                            SUPPORT REQUEST
-                        </p>
+return (
+    <div style={styles.page}>
 
-                        <h2 style={styles.ticketTitle}>
-                            {ticket.title}
-                        </h2>
-                    </div>
+        {/* HEADER */}
 
-                    <span style={styles.statusBadge}>
-                        Status {ticket.statusId}
-                    </span>
-                </div>
-
-                <p style={styles.description}>
-                    {ticket.description}
+        <div style={styles.header}>
+            <div>
+                <p style={styles.smallTitle}>
+                    TICKET DETAILS
                 </p>
 
-                <div style={styles.infoGrid}>
-
-                    <div style={styles.infoBox}>
-                        <span style={styles.infoLabel}>
-                            Status
-                        </span>
-
-                        <strong>
-                            Status ID: {ticket.statusId}
-                        </strong>
-                    </div>
-
-                    <div style={styles.infoBox}>
-                        <span style={styles.infoLabel}>
-                            Priority
-                        </span>
-
-                        <strong>
-                            Priority ID: {ticket.priorityId}
-                        </strong>
-                    </div>
-
-                    <div style={styles.infoBox}>
-                        <span style={styles.infoLabel}>
-                            Category
-                        </span>
-
-                        <strong>
-                            Category ID: {ticket.categoryId}
-                        </strong>
-                    </div>
-
-                    <div style={styles.infoBox}>
-                        <span style={styles.infoLabel}>
-                            Assigned Agent
-                        </span>
-
-                        <strong>
-                            {ticket.assignedAgentId
-                                ? `Agent #${ticket.assignedAgentId}`
-                                : "Not assigned"}
-                        </strong>
-                    </div>
-
-                </div>
+                <h1 style={styles.pageTitle}>
+                    Ticket #{ticket.id}
+                </h1>
             </div>
 
-            {/* COMMENTS */}
+            <button
+                onClick={() => navigate("/tickets")}
+                style={styles.backButton}
+            >
+                ← Back to Tickets
+            </button>
+        </div>
 
-            <div style={styles.card}>
+        {/* TICKET INFORMATION */}
 
-                <div style={styles.sectionHeader}>
-                    <h2>💬 Comments</h2>
+        <div style={styles.card}>
 
-                    <span style={styles.countBadge}>
-                        {comments.length}
-                    </span>
+            <div style={styles.cardHeader}>
+
+                <div>
+                    <p style={styles.sectionLabel}>
+                        SUPPORT REQUEST
+                    </p>
+
+                    <h2 style={styles.ticketTitle}>
+                        {ticket.title}
+                    </h2>
                 </div>
 
-                {comments.length === 0 ? (
-                    <div style={styles.emptyBox}>
-                        No comments yet.
-                    </div>
-                ) : (
-                    comments.map((comment) => (
-                        <div
-                            key={comment.id}
-                            style={styles.commentBox}
-                        >
-                            <div style={styles.commentDot} />
-
-                            <div>
-                                <p style={styles.commentText}>
-                                    {comment.comment}
-                                </p>
-
-                                <small style={styles.date}>
-                                    {new Date(
-                                        comment.createdAt
-                                    ).toLocaleString()}
-                                </small>
-                            </div>
-                        </div>
-                    ))
-                )}
+                <span style={styles.statusBadge}>
+                    Status {ticket.statusId}
+                </span>
 
             </div>
 
-            {/* ATTACHMENTS */}
+            <p style={styles.description}>
+                {ticket.description}
+            </p>
 
-            <div style={styles.card}>
+            <div style={styles.infoGrid}>
 
-                <div style={styles.sectionHeader}>
-                    <h2>📎 Attachments</h2>
-
-                    <span style={styles.countBadge}>
-                        {attachments.length}
+                <div style={styles.infoBox}>
+                    <span style={styles.infoLabel}>
+                        Status
                     </span>
+
+                    <strong>
+                        Status ID: {ticket.statusId}
+                    </strong>
                 </div>
 
-                {/* Upload area */}
-
-                <div style={styles.uploadBox}>
-
-                    <input
-                        type="file"
-                        onChange={(e) => {
-                            setSelectedFile(
-                                e.target.files[0] || null
-                            );
-
-                            setUploadMessage("");
-                        }}
-                        style={styles.fileInput}
-                    />
-
-                    <button
-                        onClick={handleUpload}
-                        disabled={uploading}
-                        style={
-                            uploading
-                                ? styles.disabledButton
-                                : styles.primaryButton
-                        }
-                    >
-                        {uploading
-                            ? "Uploading..."
-                            : "📤 Upload File"}
-                    </button>
-
-                    {selectedFile && (
-                        <p style={styles.selectedFile}>
-                            Selected:{" "}
-                            <strong>
-                                {selectedFile.name}
-                            </strong>
-                        </p>
-                    )}
-
-                    {uploadMessage && (
-                        <p style={styles.uploadMessage}>
-                            {uploadMessage}
-                        </p>
-                    )}
-
-                </div>
-
-                {/* Files */}
-
-                {attachments.length === 0 ? (
-                    <div style={styles.emptyBox}>
-                        No attachments yet.
-                    </div>
-                ) : (
-                    attachments.map((attachment) => (
-                        <div
-                            key={attachment.id}
-                            style={styles.attachmentBox}
-                        >
-
-                            <div style={styles.fileInfo}>
-
-                                <div style={styles.fileIcon}>
-                                    📄
-                                </div>
-
-                                <div>
-                                    <strong>
-                                        {attachment.fileName}
-                                    </strong>
-
-                                    <br />
-
-                                    <small style={styles.date}>
-                                        Uploaded by:{" "}
-                                        {attachment.uploadedBy}
-                                        {" • "}
-                                        {new Date(
-                                            attachment.uploadedAt
-                                        ).toLocaleString()}
-                                    </small>
-                                </div>
-
-                            </div>
-
-                            <a
-                                href={`http://localhost:5237${attachment.filePath}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={styles.openButton}
-                            >
-                                Open
-                            </a>
-
-                        </div>
-                    ))
-                )}
-
-            </div>
-
-            {/* HISTORY */}
-
-            <div style={styles.card}>
-
-                <div style={styles.sectionHeader}>
-                    <h2>📋 Activity History</h2>
-
-                    <span style={styles.countBadge}>
-                        {history.length}
+                <div style={styles.infoBox}>
+                    <span style={styles.infoLabel}>
+                        Priority
                     </span>
+
+                    <strong>
+                        Priority ID: {ticket.priorityId}
+                    </strong>
                 </div>
 
-                {history.length === 0 ? (
-                    <div style={styles.emptyBox}>
-                        No history found.
-                    </div>
-                ) : (
-                    history.map((item, index) => (
-                        <div
-                            key={index}
-                            style={styles.historyItem}
-                        >
+                <div style={styles.infoBox}>
+                    <span style={styles.infoLabel}>
+                        Category
+                    </span>
 
-                            <div style={styles.timelineDot} />
+                    <strong>
+                        Category ID: {ticket.categoryId}
+                    </strong>
+                </div>
 
-                            <div>
-                                <p style={styles.action}>
-                                    {item.action}
-                                </p>
+                <div style={styles.infoBox}>
+                    <span style={styles.infoLabel}>
+                        Assigned Agent
+                    </span>
 
-                                <small style={styles.date}>
-                                    {item.user || "User"}
-                                    {" • "}
-                                    {new Date(
-                                        item.createdAt
-                                    ).toLocaleString()}
-                                </small>
-                            </div>
-
-                        </div>
-                    ))
-                )}
+                    <strong>
+                        {ticket.assignedAgentId
+                            ? `Agent #${ticket.assignedAgentId}`
+                            : "Not assigned"}
+                    </strong>
+                </div>
 
             </div>
 
         </div>
-    );
+
+        {/* AI ANALYSIS */}
+
+        <div style={styles.card}>
+
+            <div style={styles.sectionHeader}>
+                <h2>🤖 AI Ticket Analysis</h2>
+            </div>
+
+            <p style={styles.aiDescription}>
+                Use the AI assistant to analyze this ticket
+                and suggest a category, priority, summary,
+                and troubleshooting solution.
+            </p>
+
+            <button
+                onClick={analyzeWithAI}
+                disabled={aiLoading}
+                style={
+                    aiLoading
+                        ? styles.disabledButton
+                        : styles.aiButton
+                }
+            >
+                {aiLoading
+                    ? "🤖 Analyzing..."
+                    : "🤖 Analyze with AI"}
+            </button>
+
+            {aiError && (
+                <div style={styles.aiError}>
+                    <strong>Error:</strong> {aiError}
+                </div>
+            )}
+
+            {aiAnalysis && (
+                <div style={styles.aiResult}>
+
+                    <h3 style={styles.aiResultTitle}>
+                        AI Analysis Result
+                    </h3>
+
+                    <div style={styles.aiGrid}>
+
+                        <div style={styles.aiBox}>
+                            <span style={styles.aiLabel}>
+                                Category
+                            </span>
+
+                            <strong style={styles.aiValue}>
+                                {aiAnalysis.category}
+                            </strong>
+                        </div>
+
+                        <div style={styles.aiBox}>
+                            <span style={styles.aiLabel}>
+                                Priority
+                            </span>
+
+                            <strong style={styles.aiValue}>
+                                {aiAnalysis.priority}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div style={styles.aiTextBox}>
+
+                        <span style={styles.aiLabel}>
+                            Summary
+                        </span>
+
+                        <p>
+                            {aiAnalysis.summary}
+                        </p>
+
+                    </div>
+
+                    <div style={styles.aiTextBox}>
+
+                        <span style={styles.aiLabel}>
+                            Troubleshooting Suggestion
+                        </span>
+
+                        <p>
+                            {aiAnalysis.suggestion}
+                        </p>
+
+                    </div>
+
+                </div>
+            )}
+
+        </div>
+
+        {/* COMMENTS */}
+
+        <div style={styles.card}>
+
+            <div style={styles.sectionHeader}>
+                <h2>💬 Comments</h2>
+
+                <span style={styles.countBadge}>
+                    {comments.length}
+                </span>
+            </div>
+
+            {comments.length === 0 ? (
+                <div style={styles.emptyBox}>
+                    No comments yet.
+                </div>
+            ) : (
+                comments.map((comment) => (
+                    <div
+                        key={comment.id}
+                        style={styles.commentBox}
+                    >
+                        <div style={styles.commentDot} />
+
+                        <div>
+                            <p style={styles.commentText}>
+                                {comment.comment}
+                            </p>
+
+                            <small style={styles.date}>
+                                {new Date(
+                                    comment.createdAt
+                                ).toLocaleString()}
+                            </small>
+                        </div>
+                    </div>
+                ))
+            )}
+
+        </div>
+
+        {/* ATTACHMENTS */}
+
+        <div style={styles.card}>
+
+            <div style={styles.sectionHeader}>
+                <h2>📎 Attachments</h2>
+
+                <span style={styles.countBadge}>
+                    {attachments.length}
+                </span>
+            </div>
+
+            {/* Upload area */}
+
+            <div style={styles.uploadBox}>
+
+                <input
+                    type="file"
+                    onChange={(e) => {
+                        setSelectedFile(
+                            e.target.files[0] || null
+                        );
+
+                        setUploadMessage("");
+                    }}
+                    style={styles.fileInput}
+                />
+
+                <button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    style={
+                        uploading
+                            ? styles.disabledButton
+                            : styles.primaryButton
+                    }
+                >
+                    {uploading
+                        ? "Uploading..."
+                        : "📤 Upload File"}
+                </button>
+
+                {selectedFile && (
+                    <p style={styles.selectedFile}>
+                        Selected:{" "}
+                        <strong>
+                            {selectedFile.name}
+                        </strong>
+                    </p>
+                )}
+
+                {uploadMessage && (
+                    <p style={styles.uploadMessage}>
+                        {uploadMessage}
+                    </p>
+                )}
+
+            </div>
+
+            {/* Files */}
+
+            {attachments.length === 0 ? (
+                <div style={styles.emptyBox}>
+                    No attachments yet.
+                </div>
+            ) : (
+                attachments.map((attachment) => (
+                    <div
+                        key={attachment.id}
+                        style={styles.attachmentBox}
+                    >
+
+                        <div style={styles.fileInfo}>
+
+                            <div style={styles.fileIcon}>
+                                📄
+                            </div>
+
+                            <div>
+                                <strong>
+                                    {attachment.fileName}
+                                </strong>
+
+                                <br />
+
+                                <small style={styles.date}>
+                                    Uploaded by:{" "}
+                                    {attachment.uploadedBy}
+                                    {" • "}
+                                    {new Date(
+                                        attachment.uploadedAt
+                                    ).toLocaleString()}
+                                </small>
+                            </div>
+
+                        </div>
+
+                        <a
+                            href={`http://localhost:5237${attachment.filePath}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={styles.openButton}
+                        >
+                            Open
+                        </a>
+
+                    </div>
+                ))
+            )}
+
+        </div>
+
+        {/* HISTORY */}
+
+        <div style={styles.card}>
+
+            <div style={styles.sectionHeader}>
+                <h2>📋 Activity History</h2>
+
+                <span style={styles.countBadge}>
+                    {history.length}
+                </span>
+            </div>
+
+            {history.length === 0 ? (
+                <div style={styles.emptyBox}>
+                    No history found.
+                </div>
+            ) : (
+                history.map((item, index) => (
+                    <div
+                        key={index}
+                        style={styles.historyItem}
+                    >
+
+                        <div style={styles.timelineDot} />
+
+                        <div>
+                            <p style={styles.action}>
+                                {item.action}
+                            </p>
+
+                            <small style={styles.date}>
+                                {item.user || "User"}
+                                {" • "}
+                                {new Date(
+                                    item.createdAt
+                                ).toLocaleString()}
+                            </small>
+                        </div>
+
+                    </div>
+                ))
+            )}
+
+        </div>
+
+    </div>
+);
 }
 
 // =========================
@@ -595,6 +755,7 @@ const styles = {
         padding: "11px 18px",
         border: "none",
         borderRadius: "8px",
+        cursor: "not-allowed",
         backgroundColor: "#94a3b8",
         color: "white",
         fontWeight: "bold"
@@ -659,6 +820,92 @@ const styles = {
         fontSize: "13px"
     },
 
+    // =========================
+    // AI STYLES
+    // =========================
+
+    aiButton: {
+        padding: "13px 20px",
+        border: "none",
+        borderRadius: "9px",
+        cursor: "pointer",
+        backgroundColor: "#7c3aed",
+        color: "white",
+        fontWeight: "bold",
+        fontSize: "15px"
+    },
+
+    aiDescription: {
+        color: "#64748b",
+        lineHeight: "1.6",
+        marginBottom: "18px"
+    },
+
+    aiError: {
+        marginTop: "18px",
+        padding: "15px",
+        borderRadius: "9px",
+        backgroundColor: "#fee2e2",
+        color: "#991b1b",
+        border: "1px solid #fecaca"
+    },
+
+    aiResult: {
+        marginTop: "25px",
+        padding: "22px",
+        backgroundColor: "#faf5ff",
+        border: "1px solid #e9d5ff",
+        borderRadius: "12px"
+    },
+
+    aiResultTitle: {
+        marginTop: 0,
+        marginBottom: "18px",
+        color: "#581c87"
+    },
+
+    aiGrid: {
+        display: "grid",
+        gridTemplateColumns:
+            "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: "15px",
+        marginBottom: "15px"
+    },
+
+    aiBox: {
+        padding: "16px",
+        backgroundColor: "white",
+        borderRadius: "9px",
+        border: "1px solid #e9d5ff",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px"
+    },
+
+    aiLabel: {
+        fontSize: "13px",
+        color: "#7e22ce",
+        fontWeight: "bold"
+    },
+
+    aiValue: {
+        fontSize: "18px",
+        color: "#3b0764"
+    },
+
+    aiTextBox: {
+        padding: "16px",
+        marginTop: "12px",
+        backgroundColor: "white",
+        borderRadius: "9px",
+        border: "1px solid #e9d5ff",
+        lineHeight: "1.6"
+    },
+
+    // =========================
+    // COMMENTS
+    // =========================
+
     sectionHeader: {
         display: "flex",
         alignItems: "center",
@@ -710,6 +957,10 @@ const styles = {
     date: {
         color: "#64748b"
     },
+
+    // =========================
+    // ATTACHMENTS
+    // =========================
 
     uploadBox: {
         padding: "22px",
@@ -772,6 +1023,10 @@ const styles = {
         fontWeight: "bold"
     },
 
+    // =========================
+    // HISTORY
+    // =========================
+
     historyItem: {
         display: "flex",
         gap: "14px",
@@ -796,6 +1051,7 @@ const styles = {
 };
 
 export default TicketDetails;
+
 
 
 
