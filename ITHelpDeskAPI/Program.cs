@@ -9,7 +9,7 @@ using Microsoft.OpenApi;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+AppContext.SetSwitch("Microsoft.Extensions.Configuration.FileSystemWatcher", false);
 
 // =========================================================
 // DATABASE
