@@ -1,4 +1,4 @@
-```csharp
+
 using ITHelpDeskAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -7,21 +7,17 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi;
 using System.Text;
 
-// =========================================================
-// FILE WATCHER FIX FOR RENDER
-// =========================================================
-
 Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
     "1"
 );
 
-var builder = WebApplication.CreateBuilder(args);
-
 AppContext.SetSwitch(
     "Microsoft.Extensions.Configuration.FileSystemWatcher",
     false
 );
+
+var builder = WebApplication.CreateBuilder(args);
 
 // =========================================================
 // DATABASE
@@ -32,6 +28,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
+
 
 // =========================================================
 // CORS
@@ -51,17 +48,20 @@ builder.Services.AddCors(options =>
     });
 });
 
+
 // =========================================================
 // CONTROLLERS
 // =========================================================
 
 builder.Services.AddControllers();
 
+
 // =========================================================
 // HTTP CLIENT
 // =========================================================
 
 builder.Services.AddHttpClient();
+
 
 // =========================================================
 // JWT AUTHENTICATION
@@ -100,14 +100,16 @@ builder.Services.AddAuthentication(options =>
         };
 });
 
+
 // =========================================================
 // AUTHORIZATION
 // =========================================================
 
 builder.Services.AddAuthorization();
 
+
 // =========================================================
-// SWAGGER + JWT
+// SWAGGER
 // =========================================================
 
 builder.Services.AddEndpointsApiExplorer();
@@ -124,7 +126,8 @@ builder.Services.AddSwaggerGen(options =>
             BearerFormat = "JWT",
             In = ParameterLocation.Header,
             Description = "Enter: Bearer {your JWT token}"
-        });
+        }
+    );
 
     options.AddSecurityRequirement(
         new OpenApiSecurityRequirement
@@ -139,17 +142,19 @@ builder.Services.AddSwaggerGen(options =>
                             Id = "Bearer"
                         }
                 },
-
                 Array.Empty<string>()
             }
-        });
+        }
+    );
 });
 
+
 // =========================================================
-// BUILD APP
+// BUILD
 // =========================================================
 
 var app = builder.Build();
+
 
 // =========================================================
 // SWAGGER
@@ -161,19 +166,35 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// =========================================================
-// MIDDLEWARE
-// =========================================================
 
-app.UseHttpsRedirection();
+// =========================================================
+// CORS
+// IMPORTANT: BEFORE AUTHENTICATION
+// =========================================================
 
 app.UseCors("AllowReact");
 
+
+// =========================================================
+// STATIC FILES
+// =========================================================
+
 app.UseStaticFiles();
+
+
+// =========================================================
+// AUTHENTICATION
+// =========================================================
 
 app.UseAuthentication();
 
+
+// =========================================================
+// AUTHORIZATION
+// =========================================================
+
 app.UseAuthorization();
+
 
 // =========================================================
 // CONTROLLERS
@@ -181,9 +202,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+
 // =========================================================
 // RUN
 // =========================================================
 
 app.Run();
-```
+
+
+
