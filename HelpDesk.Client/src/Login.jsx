@@ -24,9 +24,9 @@ function Login() {
             setLoading(true);
 
             const response = await fetch(
-                "http://localhost:5237/api/Auth/login",
+                "https://it-help-desk-api-7iqa.onrender.com/api/Auth/login",
                 {
-                    method: "POST",
+                method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
