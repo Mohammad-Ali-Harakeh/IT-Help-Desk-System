@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = "https://it-help-desk-api-7iqa.onrender.com/api";
-
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
