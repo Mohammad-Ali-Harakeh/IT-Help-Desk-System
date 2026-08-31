@@ -8,7 +8,7 @@ using ITHelpDeskAPI.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================
-// Database
+// DATABASE
 // =========================
 
 var connectionString =
@@ -24,30 +24,32 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // =========================
-// Controllers
+// CONTROLLERS
 // =========================
 
 builder.Services.AddControllers();
 
 // =========================
-// Swagger
+// SWAGGER
 // =========================
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // =========================
-// JWT Authentication
+// JWT
 // =========================
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 
 if (string.IsNullOrWhiteSpace(jwtKey))
 {
-    throw new InvalidOperationException("JWT Key is missing.");
+    throw new InvalidOperationException(
+        "JWT Key is missing.");
 }
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters =
@@ -67,7 +69,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // =========================
-// Authorization
+// AUTHORIZATION
 // =========================
 
 builder.Services.AddAuthorization();
@@ -92,84 +94,165 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// =========================
-// DATABASE MIGRATION + SEED
-// =========================
+// =====================================================
+// DATABASE MIGRATION + SEED DATA
+// =====================================================
 
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
 
-    var context = services.GetRequiredService<AppDbContext>();
-
-    // Apply migrations
-    context.Database.Migrate();
-
-    // =========================
-    // SEED ROLES
-    // =========================
-
-    if (!context.Roles.Any())
+    try
     {
-        context.Roles.AddRange(
-            new Role
+        var db =
+            services.GetRequiredService<AppDbContext>();
+
+        // Apply migrations
+        db.Database.Migrate();
+
+        // =========================
+        // ROLES
+        // =========================
+
+        var adminRole =
+            db.Roles.FirstOrDefault(r => r.Name == "Admin");
+
+        if (adminRole == null)
+        {
+            adminRole = new Role
             {
-                Id = 1,
                 Name = "Admin"
-            },
-            new Role
+            };
+
+            db.Roles.Add(adminRole);
+            db.SaveChanges();
+        }
+
+        var agentRole =
+            db.Roles.FirstOrDefault(r => r.Name == "Agent");
+
+        if (agentRole == null)
+        {
+            agentRole = new Role
             {
-                Id = 2,
                 Name = "Agent"
-            },
-            new Role
+            };
+
+            db.Roles.Add(agentRole);
+            db.SaveChanges();
+        }
+
+        var employeeRole =
+            db.Roles.FirstOrDefault(r => r.Name == "Employee");
+
+        if (employeeRole == null)
+        {
+            employeeRole = new Role
             {
-                Id = 3,
                 Name = "Employee"
-            }
-        );
+            };
 
-        context.SaveChanges();
-    }
+            db.Roles.Add(employeeRole);
+            db.SaveChanges();
+        }
 
-    // =========================
-    // SEED ADMIN USER
-    // =========================
+        // =========================
+        // ADMIN USER
+        // =========================
 
-    var adminExists =
-        context.Users.Any(u =>
-            u.Email == "admin@test.com");
+        var adminUser =
+            db.Users.FirstOrDefault(
+                u => u.Email == "admin@test.com"
+            );
 
-    if (!adminExists)
-    {
-        context.Users.Add(
-            new User
+        if (adminUser == null)
+        {
+            adminUser = new User
             {
                 Name = "Admin",
                 Email = "admin@test.com",
                 Password = "Admin123!",
-                RoleId = 1
-            });
+                RoleId = adminRole.Id
+            };
 
-        context.SaveChanges();
+            db.Users.Add(adminUser);
+            db.SaveChanges();
+        }
+        else
+        {
+            // Make sure existing admin has correct role/password
+            adminUser.Name = "Admin";
+            adminUser.Password = "Admin123!";
+            adminUser.RoleId = adminRole.Id;
+
+            db.SaveChanges();
+        }
+
+        Console.WriteLine(
+            "======================================"
+        );
+
+        Console.WriteLine(
+            "DATABASE MIGRATION SUCCESSFUL"
+        );
+
+        Console.WriteLine(
+            "ADMIN USER READY: admin@test.com"
+        );
+
+        Console.WriteLine(
+            "======================================"
+        );
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(
+            "DATABASE INITIALIZATION ERROR:"
+        );
+
+        Console.WriteLine(ex.Message);
+
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine(
+                ex.InnerException.Message
+            );
+        }
     }
 }
 
 // =========================
-// Middleware
+// SWAGGER
 // =========================
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// IMPORTANT:
+// Swagger is enabled in production too
+app.UseSwagger();
+
+app.UseSwaggerUI();
+
+// =========================
+// CORS
+// =========================
 
 app.UseCors("AllowFrontend");
 
+// =========================
+// AUTHENTICATION
+// =========================
+
 app.UseAuthentication();
+
 app.UseAuthorization();
 
+// =========================
+// CONTROLLERS
+// =========================
+
 app.MapControllers();
+
+// =========================
+// RUN
+// =========================
 
 app.Run();
