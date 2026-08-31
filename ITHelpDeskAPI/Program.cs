@@ -8,29 +8,14 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================================================
-// RENDER / DISABLE FILE WATCHER
-// =========================================================
-
-Environment.SetEnvironmentVariable(
-    "DOTNET_USE_POLLING_FILE_WATCHER",
-    "true"
-);
-
-Environment.SetEnvironmentVariable(
-    "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE",
-    "false"
-);
-
-// =========================================================
 // DATABASE
 // =========================================================
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-{
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
-    );
-});
+    )
+);
 
 // =========================================================
 // CORS
@@ -63,7 +48,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // =========================================================
-// JWT
+// JWT AUTHENTICATION
 // =========================================================
 
 builder.Services.AddAuthentication(options =>
@@ -123,8 +108,7 @@ builder.Services.AddSwaggerGen(options =>
             BearerFormat = "JWT",
             In = ParameterLocation.Header,
             Description = "Enter: Bearer {your JWT token}"
-        }
-    );
+        });
 
     options.AddSecurityRequirement(
         new OpenApiSecurityRequirement
@@ -132,16 +116,16 @@ builder.Services.AddSwaggerGen(options =>
             {
                 new OpenApiSecurityScheme
                 {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
+                    Reference =
+                        new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
                 },
                 Array.Empty<string>()
             }
-        }
-    );
+        });
 });
 
 // =========================================================
@@ -151,26 +135,28 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // =========================================================
-// CORS
+// SWAGGER
 // =========================================================
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// =========================================================
+// MIDDLEWARE
+// =========================================================
+
+// Render handles HTTPS externally.
+// The container itself runs HTTP.
 
 app.UseCors("AllowReact");
 
-// =========================================================
-// STATIC FILES
-// =========================================================
-
+// Uploaded files
 app.UseStaticFiles();
 
-// =========================================================
-// AUTHENTICATION
-// =========================================================
-
 app.UseAuthentication();
-
-// =========================================================
-// AUTHORIZATION
-// =========================================================
 
 app.UseAuthorization();
 
