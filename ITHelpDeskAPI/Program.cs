@@ -1,14 +1,14 @@
-
 using ITHelpDeskAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi;
 using System.Text;
 
+var builder = WebApplication.CreateBuilder(args);
+
 // =========================================================
-// RENDER FILE WATCHER FIX
+// RENDER / FILE WATCHER
 // =========================================================
 
 Environment.SetEnvironmentVariable(
@@ -21,30 +21,31 @@ AppContext.SetSwitch(
     false
 );
 
-var builder = WebApplication.CreateBuilder(args);
-
 // =========================================================
 // DATABASE
 // =========================================================
 
 builder.Services.AddDbContext<AppDbContext>(options =>
+{
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
-    )
-);
+    );
+});
 
 // =========================================================
 // CORS
 // =========================================================
 
+const string CorsPolicy = "AllowReact";
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddPolicy(CorsPolicy, policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "https://it-help-desk-frontend-vjcz.onrender.com"
+            .SetIsOriginAllowed(origin =>
+                origin == "http://localhost:5173" ||
+                origin == "https://it-help-desk-frontend-vjcz.onrender.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -107,7 +108,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // =========================================================
-// SWAGGER + JWT
+// SWAGGER
 // =========================================================
 
 builder.Services.AddEndpointsApiExplorer();
@@ -133,12 +134,11 @@ builder.Services.AddSwaggerGen(options =>
             {
                 new OpenApiSecurityScheme
                 {
-                    Reference =
-                        new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
                 },
                 Array.Empty<string>()
             }
@@ -147,27 +147,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // =========================================================
-// BUILD APP
+// BUILD
 // =========================================================
 
 var app = builder.Build();
 
 // =========================================================
-// SWAGGER
-// =========================================================
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-// =========================================================
 // CORS
-// IMPORTANT: CORS BEFORE AUTHENTICATION
 // =========================================================
 
-app.UseCors("AllowReact");
+// MUST be before authentication and controllers
+app.UseCors(CorsPolicy);
 
 // =========================================================
 // STATIC FILES
