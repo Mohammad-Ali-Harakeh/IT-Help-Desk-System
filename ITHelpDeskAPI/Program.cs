@@ -8,17 +8,17 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================================================
-// RENDER / FILE WATCHER
+// RENDER / DISABLE FILE WATCHER
 // =========================================================
 
 Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
-    "1"
+    "true"
 );
 
-AppContext.SetSwitch(
-    "Microsoft.Extensions.Configuration.FileSystemWatcher",
-    false
+Environment.SetEnvironmentVariable(
+    "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE",
+    "false"
 );
 
 // =========================================================
@@ -36,16 +36,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // CORS
 // =========================================================
 
-const string CorsPolicy = "AllowReact";
-
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(CorsPolicy, policy =>
+    options.AddPolicy("AllowReact", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                origin == "http://localhost:5173" ||
-                origin == "https://it-help-desk-frontend-vjcz.onrender.com"
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://it-help-desk-frontend-vjcz.onrender.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -65,7 +63,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // =========================================================
-// JWT AUTHENTICATION
+// JWT
 // =========================================================
 
 builder.Services.AddAuthentication(options =>
@@ -156,8 +154,7 @@ var app = builder.Build();
 // CORS
 // =========================================================
 
-// MUST be before authentication and controllers
-app.UseCors(CorsPolicy);
+app.UseCors("AllowReact");
 
 // =========================================================
 // STATIC FILES
@@ -188,7 +185,4 @@ app.MapControllers();
 // =========================================================
 
 app.Run();
-
-
-
 
