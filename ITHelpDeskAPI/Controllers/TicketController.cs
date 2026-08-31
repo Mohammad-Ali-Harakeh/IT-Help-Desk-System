@@ -24,13 +24,14 @@ namespace ITHelpDeskAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTicket(Ticket ticket)
         {
+            ticket.CreatedAt = DateTime.UtcNow;
+
             _context.Tickets.Add(ticket);
 
             await _context.SaveChangesAsync();
 
             return Ok(ticket);
         }
-
 
         // =========================
         // GET ALL TICKETS
@@ -45,7 +46,6 @@ namespace ITHelpDeskAPI.Controllers
 
             return Ok(tickets);
         }
-
 
         // =========================
         // GET TICKET BY ID
@@ -68,7 +68,6 @@ namespace ITHelpDeskAPI.Controllers
 
             return Ok(ticket);
         }
-
 
         // =========================
         // UPDATE TICKET
@@ -107,7 +106,6 @@ namespace ITHelpDeskAPI.Controllers
             });
         }
 
-
         // =========================
         // DELETE TICKET
         // DELETE: api/Ticket/{id}
@@ -136,7 +134,6 @@ namespace ITHelpDeskAPI.Controllers
             });
         }
 
-
         // =========================
         // ASSIGN TICKET
         // PUT: api/Ticket/assign/{id}
@@ -146,7 +143,6 @@ namespace ITHelpDeskAPI.Controllers
             int id,
             AssignTicketDto dto)
         {
-            // Find ticket
             var ticket =
                 await _context.Tickets.FindAsync(id);
 
@@ -158,8 +154,6 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-
-            // Find agent
             var agent =
                 await _context.Users.FindAsync(
                     dto.AssignedAgentId);
@@ -172,57 +166,33 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-
-            // Assign ticket
             ticket.AssignedAgentId =
                 dto.AssignedAgentId;
 
-
-            // =========================
-            // ACTIVITY LOG
-            // =========================
-
+            // Activity Log
             var activityLog = new ActivityLog
             {
                 TicketId = ticket.Id,
                 UserId = dto.AssignedAgentId,
                 Action = "Ticket assigned to agent",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.ActivityLogs.Add(activityLog);
 
-
-            // =========================
-            // NOTIFICATION
-            // =========================
-
+            // Notification
             var notification = new Notification
             {
                 UserId = dto.AssignedAgentId,
                 Message =
                     $"Ticket #{ticket.Id} has been assigned to you.",
                 IsRead = false,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Notifications.Add(notification);
 
-
-            // Save everything
             await _context.SaveChangesAsync();
-
-
-            // =========================
-            // VERIFY NOTIFICATION
-            // =========================
-
-            var savedNotification =
-                await _context.Notifications
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        n => n.Id == notification.Id);
-
 
             return Ok(new
             {
@@ -239,14 +209,12 @@ namespace ITHelpDeskAPI.Controllers
                 notificationId =
                     notification.Id,
 
-                notificationSaved =
-                    savedNotification != null,
+                notificationSaved = true,
 
                 notificationMessage =
                     notification.Message
             });
         }
-
 
         // =========================
         // UPDATE TICKET STATUS
@@ -268,12 +236,9 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-
-            // Update status
             ticket.StatusId = dto.StatusId;
 
-
-            // Activity log
+            // Activity Log
             _context.ActivityLogs.Add(
                 new ActivityLog
                 {
@@ -286,12 +251,10 @@ namespace ITHelpDeskAPI.Controllers
                     Action =
                         $"Ticket status changed to {dto.StatusId}",
 
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 });
 
-
             await _context.SaveChangesAsync();
-
 
             return Ok(new
             {
@@ -303,7 +266,6 @@ namespace ITHelpDeskAPI.Controllers
                 statusId = ticket.StatusId
             });
         }
-
 
         // =========================
         // GET TICKET HISTORY
@@ -324,22 +286,14 @@ namespace ITHelpDeskAPI.Controllers
                 });
             }
 
-
             var history =
                 await _context.ActivityLogs
-
-                    .Where(a =>
-                        a.TicketId == id)
-
+                    .Where(a => a.TicketId == id)
                     .Include(a => a.User)
-
-                    .OrderBy(a =>
-                        a.CreatedAt)
-
+                    .OrderBy(a => a.CreatedAt)
                     .Select(a => new
                     {
                         a.Action,
-
                         a.CreatedAt,
 
                         User =
@@ -347,16 +301,13 @@ namespace ITHelpDeskAPI.Controllers
                                 ? a.User.Name
                                 : "Unknown"
                     })
-
                     .ToListAsync();
-
 
             return Ok(new
             {
                 ticketId = id,
-
                 history
             });
         }
     }
-} 
+}

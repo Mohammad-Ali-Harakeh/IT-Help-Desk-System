@@ -113,6 +113,15 @@ namespace ITHelpDeskAPI.Data
                 .HasForeignKey(ta => ta.UploadedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+
+            // Seed Roles
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "Admin" },
+                new Role { Id = 2, Name = "Agent" },
+                new Role { Id = 3, Name = "Employee" }
+            );
+
+
             // Seed Categories
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, CategoryName = "Hardware" },

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ITHelpDeskAPI.Data;
+using ITHelpDeskAPI.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Database
 // =========================
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection");
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -48,17 +50,20 @@ if (string.IsNullOrWhiteSpace(jwtKey))
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)
-            ),
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
 
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true
-        };
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)
+                    ),
+
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true
+            };
     });
 
 // =========================
@@ -88,6 +93,69 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // =========================
+// DATABASE MIGRATION + SEED
+// =========================
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var context = services.GetRequiredService<AppDbContext>();
+
+    // Apply migrations
+    context.Database.Migrate();
+
+    // =========================
+    // SEED ROLES
+    // =========================
+
+    if (!context.Roles.Any())
+    {
+        context.Roles.AddRange(
+            new Role
+            {
+                Id = 1,
+                Name = "Admin"
+            },
+            new Role
+            {
+                Id = 2,
+                Name = "Agent"
+            },
+            new Role
+            {
+                Id = 3,
+                Name = "Employee"
+            }
+        );
+
+        context.SaveChanges();
+    }
+
+    // =========================
+    // SEED ADMIN USER
+    // =========================
+
+    var adminExists =
+        context.Users.Any(u =>
+            u.Email == "admin@test.com");
+
+    if (!adminExists)
+    {
+        context.Users.Add(
+            new User
+            {
+                Name = "Admin",
+                Email = "admin@test.com",
+                Password = "Admin123!",
+                RoleId = 1
+            });
+
+        context.SaveChanges();
+    }
+}
+
+// =========================
 // Middleware
 // =========================
 
@@ -105,5 +173,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
