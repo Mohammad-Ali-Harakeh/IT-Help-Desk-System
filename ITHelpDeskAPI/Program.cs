@@ -3,7 +3,32 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Text;
+
+// =========================================================
+// DISABLE CONFIG FILE WATCHER
+// IMPORTANT FOR RENDER
+// =========================================================
+
+Environment.SetEnvironmentVariable(
+    "DOTNET_hostBuilder:reloadConfigOnChange",
+    "false"
+);
+
+Environment.SetEnvironmentVariable(
+    "ASPNETCORE_hostBuilder:reloadConfigOnChange",
+    "false"
+);
+
+Environment.SetEnvironmentVariable(
+    "DOTNET_USE_POLLING_FILE_WATCHER",
+    "1"
+);
+
+// =========================================================
+// BUILDER
+// =========================================================
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -108,7 +133,8 @@ builder.Services.AddSwaggerGen(options =>
             BearerFormat = "JWT",
             In = ParameterLocation.Header,
             Description = "Enter: Bearer {your JWT token}"
-        });
+        }
+    );
 
     options.AddSecurityRequirement(
         new OpenApiSecurityRequirement
@@ -119,13 +145,17 @@ builder.Services.AddSwaggerGen(options =>
                     Reference =
                         new OpenApiReference
                         {
-                            Type = ReferenceType.SecurityScheme,
+                            Type =
+                                ReferenceType.SecurityScheme,
+
                             Id = "Bearer"
                         }
                 },
+
                 Array.Empty<string>()
             }
-        });
+        }
+    );
 });
 
 // =========================================================
@@ -145,18 +175,27 @@ if (app.Environment.IsDevelopment())
 }
 
 // =========================================================
-// MIDDLEWARE
+// CORS
+// IMPORTANT: BEFORE CONTROLLERS
 // =========================================================
-
-// Render handles HTTPS externally.
-// The container itself runs HTTP.
 
 app.UseCors("AllowReact");
 
-// Uploaded files
+// =========================================================
+// STATIC FILES
+// =========================================================
+
 app.UseStaticFiles();
 
+// =========================================================
+// AUTHENTICATION
+// =========================================================
+
 app.UseAuthentication();
+
+// =========================================================
+// AUTHORIZATION
+// =========================================================
 
 app.UseAuthorization();
 
