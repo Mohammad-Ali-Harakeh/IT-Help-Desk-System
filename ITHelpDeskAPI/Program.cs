@@ -1,3 +1,4 @@
+
 using ITHelpDeskAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +8,7 @@ using Microsoft.OpenApi;
 using System.Text;
 
 // =========================================================
-// DISABLE CONFIG FILE WATCHER
-// IMPORTANT FOR RENDER
+// RENDER CONFIG
 // =========================================================
 
 Environment.SetEnvironmentVariable(
@@ -25,10 +25,6 @@ Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
     "1"
 );
-
-// =========================================================
-// BUILDER
-// =========================================================
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,9 +47,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReact", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "https://it-help-desk-frontend-vjcz.onrender.com"
+            .SetIsOriginAllowed(origin =>
+                origin == "http://localhost:5173" ||
+                origin == "https://it-help-desk-frontend-vjcz.onrender.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -73,7 +69,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // =========================================================
-// JWT AUTHENTICATION
+// JWT
 // =========================================================
 
 builder.Services.AddAuthentication(options =>
@@ -147,11 +143,9 @@ builder.Services.AddSwaggerGen(options =>
                         {
                             Type =
                                 ReferenceType.SecurityScheme,
-
                             Id = "Bearer"
                         }
                 },
-
                 Array.Empty<string>()
             }
         }
@@ -176,7 +170,7 @@ if (app.Environment.IsDevelopment())
 
 // =========================================================
 // CORS
-// IMPORTANT: BEFORE CONTROLLERS
+// MUST BE BEFORE AUTHENTICATION / AUTHORIZATION
 // =========================================================
 
 app.UseCors("AllowReact");
@@ -210,4 +204,6 @@ app.MapControllers();
 // =========================================================
 
 app.Run();
+
+
 
